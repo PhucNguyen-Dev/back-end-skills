@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  skills:
+    name: Skills (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Official Agent Skills validator (skills-ref)
+        run: |
+          pip install skills-ref==0.1.1
+          agentskills validate skills/agentic-payments-protocols
+          agentskills validate skills/ai-metering-billing
+          agentskills validate skills/agent-wallet-spend-policy
+      - name: Custom spec validator (frontmatter, links, token budget)
+        run: python scripts/validate_skills.py
+      - name: Compile all Python
+        run: python -m compileall -q skills examples
+      - name: Skill demo self-tests (stdlib)
+        run: |
+          python skills/ai-metering-billing/scripts/demo_metering.py
+          python skills/agent-wallet-spend-policy/scripts/demo_spend_policy.py
+
+  example:
+    name: Example (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: examples/e2e-paid-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned dependencies
+        run: pip install -r requirements.txt
+      - name: x402 demo smoke (expect 402 challenge, offline)
+        working-directory: .
+        run: python skills/agentic-payments-protocols/scripts/demo_x402_fastapi.py --smoke
+      - name: Offline end-to-end tests with coverage
+        run: pytest tests -q --cov=app --cov-report=term-missing

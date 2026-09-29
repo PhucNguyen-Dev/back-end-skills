@@ -1,5 +1,9 @@
 # back-end-skills
 
+[![CI](https://github.com/PhucNguyen-Dev/back-end-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/PhucNguyen-Dev/back-end-skills/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![skills-ref](https://img.shields.io/badge/skills--ref-validated-4c1.svg)](https://github.com/agentskills/agentskills)
+
 A suite of [Agent Skills](https://agentskills.io/specification) for building
 **AI payment infrastructure** on the backend. Each skill teaches an agent one
 route through the money stack:
@@ -12,6 +16,17 @@ route through the money stack:
 
 Together: one path makes your API earn from agents, one makes your agent spend
 safely, and metering ties both to billing.
+
+## Status & scope
+
+- **What this is:** a validated reference suite + runnable starter backend for
+  AI payment infrastructure. Verified against `x402` SDK **2.24.0**, Python
+  **3.11–3.14**, on CI (Ubuntu + Windows).
+- **What this is not:** not audited, not certified (PCI-DSS/SOC2), not a
+  substitute for a security review before handling real funds. See
+  [SECURITY.md](SECURITY.md).
+- The settlement integration test runs against **Base Sepolia testnet** only
+  when you supply a funded key; CI runs the offline suite.
 
 ## Install
 
@@ -52,12 +67,16 @@ runs the spend policy before signing. Offline tests included.
 ## Verify
 
 ```bash
-python scripts/validate_skills.py          # spec checks (or: py -3 on Windows)
-python -m compileall skills                # every demo compiles
+pip install skills-ref==0.1.1
+agentskills validate skills/<name>        # official spec validator
+python scripts/validate_skills.py         # + links/token-budget checks
+python -m compileall skills examples      # everything compiles
+cd examples/e2e-paid-api && pytest tests -q   # offline end-to-end suite
 ```
 
-`agent-wallet-spend-policy/scripts/demo_spend_policy.py` runs offline with the
-standard library and self-tests on launch.
+CI runs all of the above on every push (Ubuntu + Windows). The skill demos in
+`scripts/` self-test on launch; `agent-wallet-spend-policy` and
+`ai-metering-billing` demos are pure stdlib.
 
 ## Roadmap: skills → tools (phase 2, not built yet)
 
@@ -81,4 +100,4 @@ transport; this pass ships skills and demos only.
 
 ## License
 
-MIT (see each skill's frontmatter).
+[MIT](LICENSE) — see also each skill's frontmatter.
