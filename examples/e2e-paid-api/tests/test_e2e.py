@@ -14,9 +14,10 @@ from x402 import PaymentPayload, PaymentRequirements
 from x402.http import encode_payment_signature_header
 
 from app.buyer import intent_from_requirements
+from app.ledger import Ledger
 from app.meter import Meter
 from app.policy import PaymentIntent, SessionBudget, SpendPolicy, authorize
-from app.server import create_app, period_now
+from app.server import PRICE_ATOMIC, create_app, period_now
 
 PAY_TO = "0x000000000000000000000000000000000000dEaD"
 USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
@@ -53,8 +54,8 @@ def fake_request(signature: str | None = None) -> Request:
                     "path": "/paid/report", "headers": headers})
 
 
-def report_endpoint(meter: Meter):
-    app = create_app(meter)
+def report_endpoint(meter: Meter, ledger: Ledger | None = None):
+    app = create_app(meter, ledger)
     return next(route.endpoint for route in app.routes
                 if getattr(route, "path", "") == "/paid/report")
 
@@ -101,6 +102,45 @@ def test_usage_and_flush_endpoints():
     flush = client.get("/flush", params={"period": period_now()}).json()
     assert flush["sent_to_stripe"] is False
     assert flush["records"][0]["action"] == "increment"
+
+
+def test_ledger_posts_once_per_payment():
+    meter, ledger = Meter(), Ledger()
+    handler = report_endpoint(meter, ledger)
+
+    handler(fake_request(signature_header("0xPAYER", "0x" + "33" * 32)))
+    handler(fake_request(signature_header("0xPAYER", "0x" + "33" * 32)))  # replay
+    handler(fake_request(signature_header("0xPAYER", "0x" + "44" * 32)))  # new nonce
+
+    assert ledger.balances() == {
+        "1000": 2 * PRICE_ATOMIC,   # cash up twice (two distinct payments)
+        "4000": -2 * PRICE_ATOMIC,  # revenue
+    }
+    assert ledger.trial_balance == 0
+
+
+def test_balance_endpoint_reflects_ledger():
+    meter, ledger = Meter(), Ledger()
+    handler = report_endpoint(meter, ledger)
+    handler(fake_request(signature_header("0xPAYER", "0x" + "55" * 32)))
+
+    client = TestClient(create_app(meter, ledger))
+    out = client.get("/balance").json()
+    assert out["balances"]["1000"] == PRICE_ATOMIC
+    assert out["balances"]["4000"] == -PRICE_ATOMIC
+    assert out["trial_balance"] == 0
+
+
+def test_ledger_rejects_unbalanced_and_duplicates():
+    ledger = Ledger()
+    assert ledger.post("e1", [("1000", 100), ("4000", -100)])
+    assert not ledger.post("e1", [("1000", 100), ("4000", -100)])  # idempotent
+    try:
+        ledger.post("e2", [("1000", 100)])
+        raise AssertionError("unbalanced entry accepted")
+    except ValueError:
+        pass
+    assert ledger.trial_balance == 0
 
 
 def test_policy_matrix():

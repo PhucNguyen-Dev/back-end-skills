@@ -62,9 +62,10 @@ Copy-Item -Recurse skills\* "$env:USERPROFILE\.config\opencode\skills\"
 
 ## Example
 
-[`examples/e2e-paid-api/`](examples/e2e-paid-api/README.md) wires all three
-skills into one service: x402-paid endpoint + durable metering + a buyer that
-runs the spend policy before signing. Offline tests included.
+[`examples/e2e-paid-api/`](examples/e2e-paid-api/README.md) wires all four
+skills into one service: x402-paid endpoint + durable metering + balanced
+settlement ledger + a buyer that runs the spend policy before signing.
+Offline tests included.
 
 ## Verify
 

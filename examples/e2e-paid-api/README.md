@@ -1,8 +1,9 @@
-# e2e-paid-api — one backend, all three skills
+# e2e-paid-api — one backend, all four skills
 
 A small FastAPI service that charges per request (x402), meters what was
-consumed (durable, idempotent), and a buyer agent that runs a spend policy
-**before any key signs**.
+consumed (durable, idempotent), posts every settlement to a balanced
+append-only ledger, and a buyer agent that runs a spend policy **before any
+key signs**.
 
 | Piece | Skill applied |
 | --- | --- |
@@ -11,6 +12,7 @@ consumed (durable, idempotent), and a buyer agent that runs a spend policy
 | `app/meter.py` — unique-key SQLite ingestion, `increment` flush plan | `ai-metering-billing` |
 | `app/buyer.py` — `authorize()` runs between 402 and signing | `agent-wallet-spend-policy` |
 | `app/policy.py` — allowlist / caps / human threshold, deny by default | `agent-wallet-spend-policy` |
+| `app/ledger.py` — balanced cash/revenue entries, trial balance = 0 | `payments-ledger-reconciliation` |
 
 ## Run
 
@@ -65,6 +67,7 @@ Get testnet USDC from a Base Sepolia faucet; the default facilitator is
 ```bash
 curl http://127.0.0.1:8402/usage            # metered totals this period
 curl http://127.0.0.1:8402/flush            # Stripe-shaped increment plan
+curl http://127.0.0.1:8402/balance          # ledger accounts, trial balance 0
 ```
 
 Set `STRIPE_API_KEY` + `STRIPE_SUBSCRIPTION_ITEM_ID` to actually POST the
@@ -94,3 +97,7 @@ flush to Stripe.
   `anonymous` (the middleware never lets them reach the paid handler).
 - **Increment-only flushing**: usage records are reported with
   `action="increment"`, so a retried batch can't under-bill.
+- **Ledger mirrors settlement**: each paid request posts one balanced entry
+  (cash `1000` / revenue `4000`, USDC atomic units) keyed by the same nonce —
+  replays are idempotent and `GET /balance`'s trial balance always sums to
+  zero. Unbalanced entries are rejected at write time.
