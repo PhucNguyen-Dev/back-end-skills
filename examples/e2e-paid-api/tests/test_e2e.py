@@ -104,6 +104,22 @@ def test_usage_and_flush_endpoints():
     assert flush["records"][0]["action"] == "increment"
 
 
+def test_meter_concurrent_retries_record_once():
+    """N threads replaying one idempotency key -> exactly one usage row."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    meter = Meter()
+    kwargs = dict(customer_id="0xPAYER", metric="report_call", quantity=1,
+                  period_key=period_now(),
+                  idempotency_key="report:0x" + "77" * 32)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(lambda _: meter.record(**kwargs), range(16)))
+
+    assert sum(results) == 1
+    assert meter.totals(period_now())[0]["quantity"] == 1
+
+
 def test_ledger_posts_once_per_payment():
     meter, ledger = Meter(), Ledger()
     handler = report_endpoint(meter, ledger)
