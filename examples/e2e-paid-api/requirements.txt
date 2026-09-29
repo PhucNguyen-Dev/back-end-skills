@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+httpx
+x402[fastapi,httpx,evm]
+pytest
+stripe

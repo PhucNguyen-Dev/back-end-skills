@@ -43,6 +43,12 @@ Copy-Item -Recurse skills\* "$env:USERPROFILE\.config\opencode\skills\"
 - Runnable demos live in each skill's `scripts/` directory; see each skill's
   `compatibility` field for dependencies.
 
+## Example
+
+[`examples/e2e-paid-api/`](examples/e2e-paid-api/README.md) wires all three
+skills into one service: x402-paid endpoint + durable metering + a buyer that
+runs the spend policy before signing. Offline tests included.
+
 ## Verify
 
 ```bash
