@@ -18,20 +18,20 @@ safely, and metering ties both to billing.
 Skills use the portable `SKILL.md` spec, so they work in Claude Code, opencode,
 and any spec-compliant harness.
 
-**Claude Code**
+**Claude Code (global) — also read by opencode**
 
 ```powershell
 Copy-Item -Recurse skills\* "$env:USERPROFILE\.claude\skills\"
 ```
 
-**opencode**
+**opencode (global)**
 
 ```powershell
-Copy-Item -Recurse skills\* "$env:USERPROFILE\.config\opencode\skill\"
+Copy-Item -Recurse skills\* "$env:USERPROFILE\.config\opencode\skills\"
 ```
 
-**Project-local**: copy the skill directories into your repo's
-`.claude/skills/` or `.opencode/skill/`.
+**Project-local**: copy the skill directories into the target repo's
+`.opencode\skills\`, `.claude\skills\`, or `.agents\skills\`.
 
 ## Conventions
 
