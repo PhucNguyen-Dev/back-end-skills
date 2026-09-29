@@ -14,6 +14,7 @@ key signs**.
 | `app/policy.py` — allowlist / caps / human threshold, deny by default | `agent-wallet-spend-policy` |
 | `app/ledger.py` — balanced cash/revenue entries, trial balance = 0 | `payments-ledger-reconciliation` |
 | `app/webhooks.py` — raw-body signature verify + idempotent event dispatch | `ai-metering-billing` |
+| `app/signing.py` — DevKeySigner (env, dev only) / KmsSigner seam | `agent-wallet-spend-policy` |
 
 ## Run
 
@@ -107,6 +108,9 @@ fails closed (`503`) when no secret is configured. Ship-state handlers for
   never double-count.
 - **Policy before signature**: `authorize()` sees only the 402's
   requirements (amount, payee, network). Deny means no key was ever touched.
+- **Swappable custody**: `pay()` takes any signer with `.address` +
+  `.sign_typed_data(...)` — `DevKeySigner` (env key, dev/testnet) today;
+  production swaps in `KmsSigner` without touching policy or flow.
 - **Identity for metering** comes from the verified `PAYMENT-SIGNATURE`
   header the middleware already validated; requests without one meter as
   `anonymous` (the middleware never lets them reach the paid handler).

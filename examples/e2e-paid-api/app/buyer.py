@@ -24,7 +24,6 @@ from x402.http import (
     x402HTTPClientSync,
 )
 from x402.mechanisms.evm.exact import ExactEvmClientScheme
-from x402.mechanisms.evm.signers import EthAccountSigner
 
 from app.policy import Decision, PaymentIntent, SpendPolicy, SessionBudget, authorize
 
@@ -64,19 +63,17 @@ def intent_from_requirements(requirements: object) -> PaymentIntent:
                          description="GET /paid/report")
 
 
-def pay(url: str, payment_required: object) -> httpx.Response:
-    """Sign and retry. Only ever called after authorize() approved."""
-    private_key = os.environ.get("WALLET_PRIVATE_KEY")
-    if not private_key:
-        raise SystemExit("approved, but WALLET_PRIVATE_KEY is not set "
-                         "(set a funded Base Sepolia testnet key to pay)")
+def pay(url: str, payment_required: object, signer: object | None = None) -> httpx.Response:
+    """Sign and retry. Only ever called after authorize() approved.
 
-    from eth_account import Account
+    `signer` defaults to DevKeySigner (env key, dev/testnet). Production
+    injects a KmsSigner — the rest of the flow is unchanged (app/signing.py).
+    """
+    from app.signing import signer_from_env
 
-    account = Account.from_key(private_key)
+    signer = signer or signer_from_env()
     client = x402ClientSync()
-    client.register("eip155:*",
-                    ExactEvmClientScheme(EthAccountSigner(account)))
+    client.register("eip155:*", ExactEvmClientScheme(signer))
     http_client = x402HTTPClientSync(client)
     payload = http_client.create_payment_payload(payment_required)
     encoded = http_client.encode_payment_signature_header(payload)
