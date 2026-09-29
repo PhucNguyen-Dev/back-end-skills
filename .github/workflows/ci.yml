@@ -25,6 +25,7 @@ jobs:
           agentskills validate skills/agentic-payments-protocols
           agentskills validate skills/ai-metering-billing
           agentskills validate skills/agent-wallet-spend-policy
+          agentskills validate skills/payments-ledger-reconciliation
       - name: Custom spec validator (frontmatter, links, token budget)
         run: python scripts/validate_skills.py
       - name: Compile all Python
@@ -33,6 +34,7 @@ jobs:
         run: |
           python skills/ai-metering-billing/scripts/demo_metering.py
           python skills/agent-wallet-spend-policy/scripts/demo_spend_policy.py
+          python skills/payments-ledger-reconciliation/scripts/demo_ledger.py
 
   example:
     name: Example (${{ matrix.os }})

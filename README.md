@@ -13,9 +13,11 @@ route through the money stack:
 | [`agentic-payments-protocols`](skills/agentic-payments-protocols/SKILL.md) | Charge for HTTP resources, pay for services as an agent | Sell to agents (x402), buy with proof of authority (AP2) |
 | [`ai-metering-billing`](skills/ai-metering-billing/SKILL.md) | Meter AI usage → bill → collect | Turn token/invocation usage into revenue |
 | [`agent-wallet-spend-policy`](skills/agent-wallet-spend-policy/SKILL.md) | Keys, spend caps, allowlists, audit | Let agents spend — only within policy enforced in code |
+| [`payments-ledger-reconciliation`](skills/payments-ledger-reconciliation/SKILL.md) | Record money, prove balances, catch drift | Double-entry journal + three-way reconciliation + disputes |
 
 Together: one path makes your API earn from agents, one makes your agent spend
-safely, and metering ties both to billing.
+safely, metering ties both to billing, and the ledger proves the money is
+where you think it is.
 
 ## Status & scope
 
@@ -90,6 +92,7 @@ can later be exposed one-to-one as MCP tools:
 | `report_usage` | `ai-metering-billing` — idempotent usage flush |
 | `check_quota` | `ai-metering-billing` — quota/overage check |
 | `check_spend_policy` | `agent-wallet-spend-policy` — pre-sign policy check |
+| `post_entry` / `reconcile_breaks` | `payments-ledger-reconciliation` — journal + daily reconciliation |
 
 For paid MCP tools, x402 defines an MCP transport: payment rides in
 `_meta["x402/payment"]` with settlement results in
