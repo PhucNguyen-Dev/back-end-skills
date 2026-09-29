@@ -13,6 +13,7 @@ key signs**.
 | `app/buyer.py` — `authorize()` runs between 402 and signing | `agent-wallet-spend-policy` |
 | `app/policy.py` — allowlist / caps / human threshold, deny by default | `agent-wallet-spend-policy` |
 | `app/ledger.py` — balanced cash/revenue entries, trial balance = 0 | `payments-ledger-reconciliation` |
+| `app/webhooks.py` — raw-body signature verify + idempotent event dispatch | `ai-metering-billing` |
 
 ## Run
 
@@ -73,6 +74,19 @@ curl http://127.0.0.1:8402/balance          # ledger accounts, trial balance 0
 Set `STRIPE_API_KEY` + `STRIPE_SUBSCRIPTION_ITEM_ID` to actually POST the
 flush to Stripe.
 
+**Stripe webhooks** (`POST /webhooks/stripe`):
+
+```bash
+set STRIPE_WEBHOOK_SECRET=whsec_...
+stripe listen --forward-to localhost:8402/webhooks/stripe
+```
+
+The endpoint verifies the `stripe-signature` header against the **raw body**
+(300s tolerance), journaling `event.id` so retries/replays dispatch handlers
+exactly once, returns `200` fast for handled *and* unhandled events, and
+fails closed (`503`) when no secret is configured. Ship-state handlers for
+`invoice.paid` / `invoice.payment_failed` live in `app/webhooks.py`.
+
 ## Environment
 
 | Var | Default | Used by |
@@ -84,6 +98,7 @@ flush to Stripe.
 | `ALLOWED_PAYEES` | `0x…dEaD` (comma-separated) | buyer — policy allowlist |
 | `WALLET_PRIVATE_KEY` | — | buyer — only for real payment |
 | `STRIPE_API_KEY` / `STRIPE_SUBSCRIPTION_ITEM_ID` | — | server — optional live flush |
+| `STRIPE_WEBHOOK_SECRET` | — | server — webhook verify; unset = 503 (fail closed) |
 
 ## Design notes
 

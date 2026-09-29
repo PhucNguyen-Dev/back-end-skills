@@ -31,6 +31,7 @@ from x402.server import x402ResourceServer
 
 from app.ledger import Ledger
 from app.meter import Meter
+from app.webhooks import default_handlers, register_stripe_webhook
 
 NETWORK = os.getenv("X402_NETWORK", "eip155:84532")  # Base Sepolia (testnet)
 PAY_TO = os.getenv("EVM_ADDRESS", "0x000000000000000000000000000000000000dEaD")
@@ -97,6 +98,7 @@ def create_app(meter: Meter | None = None, ledger: Ledger | None = None) -> Fast
         )
     }
     app.add_middleware(PaymentMiddlewareASGI, routes=routes, server=server)
+    register_stripe_webhook(app, default_handlers({}))
 
     @app.get("/paid/report")
     def paid_report(request: Request) -> dict:
