@@ -169,5 +169,6 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    print(f"GET http://127.0.0.1:8402/paid/report  price={PRICE} network={NETWORK}")
-    uvicorn.run(app, host="127.0.0.1", port=8402)
+    port = int(os.getenv("PORT", "8402"))
+    print(f"GET http://127.0.0.1:{port}/paid/report  price={PRICE} network={NETWORK}")
+    uvicorn.run(app, host="127.0.0.1", port=port)
