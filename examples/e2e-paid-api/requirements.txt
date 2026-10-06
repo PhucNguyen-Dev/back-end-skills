@@ -2,6 +2,6 @@ fastapi==0.142.0
 uvicorn==0.54.0
 httpx==0.28.1
 x402[fastapi,httpx,evm]==2.24.0
-stripe==15.6.1
+stripe==16.0.0
 pytest==9.1.1
 pytest-cov==7.1.0
